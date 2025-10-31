@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python main.py:*)",
+      "Bash(python3:*)",
+      "Bash(where:*)",
+      "Bash(py:*)",
+      "Bash(curl:*)",
+      "Bash(python:*)",
+      "Read(//c/Users/yours/Desktop/projects/gemini-voice-assistant/**)",
+      "WebSearch"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -1,0 +1,45 @@
+Gemini Document Chat - Test Document
+
+This is a test document for the Gemini Document Chat application.
+
+Introduction:
+The Gemini Document Chat is an innovative RAG-based application that allows users to upload PDF and text files and chat with an AI about the document content. It uses Google's Gemini LLM for generating responses.
+
+Key Features:
+1. Document Upload: Supports PDF and TXT files up to 50MB
+2. Smart Chunking: Breaks documents into semantic chunks for efficient processing
+3. Vector Search: Uses FAISS for fast similarity search
+4. RAG Architecture: Retrieves only relevant chunks to answer questions
+5. Cost Efficient: Uses free local embeddings and minimal API calls
+
+Technical Stack:
+- Backend: FastAPI (Python web framework)
+- Document Processing: PyMuPDF and pdfplumber
+- Embeddings: Sentence Transformers (all-MiniLM-L6-v2)
+- Vector Database: FAISS
+- LLM: Google Gemini API
+- Frontend: HTML, CSS, JavaScript
+
+How It Works:
+1. User uploads a document
+2. System extracts and chunks the text
+3. Embeddings are created for each chunk
+4. User asks questions
+5. System searches for relevant chunks
+6. Gemini generates answer based on context
+
+Benefits:
+- Handle large documents efficiently (1000+ pages)
+- Minimal cost with free tiers
+- Accurate responses based on document content
+- Fast semantic search
+- Modern chat interface
+
+Use Cases:
+- Research paper analysis
+- Legal document review
+- Technical documentation queries
+- Book summarization
+- Report analysis
+
+This application demonstrates the power of RAG (Retrieval-Augmented Generation) in creating context-aware AI assistants.
