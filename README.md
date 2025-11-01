@@ -1,382 +1,373 @@
-# Gemini Document Chat - RAG-based PDF/Text Chat Application
+# AskAtlas - Multimodal RAG Chat Application
 
-A powerful, cost-efficient application that allows users to upload PDF or text documents and chat with Google Gemini LLM about their content using Retrieval-Augmented Generation (RAG). Designed to handle large documents (1000+ pages) efficiently with minimal cost.
+A powerful, cost-efficient application that allows users to upload documents, images, videos, and chat with Google Gemini LLM about their content using Retrieval-Augmented Generation (RAG). Features **full visual analysis** of images and videos using Gemini Vision API.
 
-## Features
+## ✨ Key Features
 
-- **Document Upload & Processing**: Support for PDF and TXT files up to 50MB
-- **Intelligent Text Chunking**: Semantic chunking with overlap for better context
-- **Vector Embeddings**: Fast similarity search using FAISS and Sentence Transformers
-- **RAG-based Chat**: Context-aware responses using Google Gemini API
-- **Session Management**: Maintain conversation context across queries
-- **Modern UI**: Clean, responsive chat interface
-- **Cost Optimized**: Free-tier friendly with local embeddings and minimal API calls
+- **📄 Document Processing**: Support for PDF, TXT, MD, DOCX, PPTX files up to 50MB
+- **🖼️ Image Analysis**: **Full visual understanding** using Gemini Vision API (not just OCR)
+- **🎥 Video Analysis**: Automatic frame extraction and visual analysis with Gemini Vision
+- **🎤 Audio Processing**: Extract transcripts from MP3, MP4, WAV, M4A files using Whisper
+- **🔍 Intelligent Text Chunking**: Semantic chunking with overlap for better context
+- **📊 Vector Embeddings**: Fast similarity search using FAISS and Sentence Transformers
+- **💬 RAG-based Chat**: Context-aware responses using Google Gemini API
+- **🎯 Session Management**: Maintain conversation context across queries
+- **🎨 Modern UI**: Bright, vibrant, responsive chat interface
+- **💰 Cost Optimized**: Free-tier friendly with local embeddings and minimal API calls
+- **📺 YouTube Support**: Extract and process YouTube video transcripts
 
-## Architecture
+## 🎯 Visual Analysis Capabilities
+
+**This application uses Gemini Vision API for true visual understanding:**
+
+- **Images (PNG, JPG, JPEG)**: Direct visual analysis - understands content, objects, text, layout, scenes
+- **Videos (MP4)**: Extracts key frames and analyzes visual content frame-by-frame
+- **Combined Context**: Can combine visual analysis with text content for comprehensive answers
+
+## 🏗️ Architecture
 
 ```
 ┌─────────────┐
-│   Frontend  │  Next.js (React) - Chat Interface
+│   Frontend  │  Next.js (React) - Bright, Modern Chat Interface
 └──────┬──────┘
        │
        ↓
 ┌─────────────┐
-│  Next.js API│  Backend API (Node)
+│  Next.js API│  Backend API (Node.js)
 └──────┬──────┘
        │
-       ├─→ Document Processor (PyMuPDF, pdfplumber)
+       ├─→ Document Processor (PDF, DOCX, PPTX, TXT, MD)
+       │
+       ├─→ Image Processor (Gemini Vision API)
+       │
+       ├─→ Video Processor (Frame extraction + Gemini Vision)
+       │
+       ├─→ Audio Processor (Whisper ASR)
        │
        ├─→ Text Chunker (Semantic chunking)
        │
        ├─→ Vector Store (FAISS + Sentence Transformers)
        │
-       └─→ Gemini Handler (Google Gemini API)
+       └─→ Gemini Handler (Text + Vision API)
 ```
 
-## Tech Stack
+## 🛠️ Tech Stack
 
 ### Backend
-- **Next.js API Routes**: Node-based API
-- **PyMuPDF & pdfplumber**: PDF text extraction
-- **Sentence Transformers**: Free local embeddings (all-MiniLM-L6-v2)
-- **FAISS**: Facebook AI Similarity Search (vector database)
-- **Google Gemini API**: LLM for response generation
+- **Next.js API Routes**: Node.js-based API
+- **pdf-parse**: PDF text extraction
+- **mammoth**: DOCX processing
+- **JSZip**: PPTX processing
+- **Tesseract.js**: OCR for images (fallback)
+- **@xenova/transformers**: Whisper for audio transcription
+- **ffmpeg-static**: Video frame extraction
+- **Sentence Transformers**: Free local embeddings (Xenova/all-MiniLM-L6-v2)
+- **better-sqlite3**: Vector database storage
+- **Google Gemini API**: LLM for text and vision analysis
+- **youtube-transcript**: YouTube video transcript extraction
 
 ### Frontend
 - **Next.js (React)**: App Router with React components
-- **CSS**: Global styles in `app/globals.css`
+- **TypeScript**: Type-safe development
+- **CSS**: Modern gradient-based styling with bright colors
 
-## Installation
+## 📦 Installation
 
 ### Prerequisites
-- Python 3.8+
+- Node.js 18.17.0 or higher
 - Google Gemini API key (get from [Google AI Studio](https://makersuite.google.com/app/apikey))
 
 ### Setup
 
 1. **Clone or navigate to the project directory**
 ```bash
-cd jyoProject
+cd docs-chat-master
 ```
 
-2. **Create virtual environment**
-```bash
-python -m venv venv
-
-# On Windows
-venv\Scripts\activate
-
-# On Mac/Linux
-source venv/bin/activate
-```
-
-3. **Install dependencies**
-```bash
-pip install -r requirements.txt
-```
-
-4. **Configure environment variables**
-```bash
-# Copy example env file
-cp .env.example .env
-
-# Edit .env and add your Gemini API key
-# GEMINI_API_KEY=your_actual_api_key_here
-```
-
-5. **Create necessary directories**
-```bash
-mkdir uploads storage
-```
-
-## Usage
-
-### 1. Start the App (Frontend + Backend in Next.js)
-
+2. **Install dependencies**
 ```bash
 npm install
+```
+
+3. **Configure environment variables**
+
+Create a `.env.local` file in the root directory:
+```bash
+GEMINI_API_KEY=your_actual_api_key_here
+MAX_CHUNK_SIZE=1000
+CHUNK_OVERLAP=200
+MAX_FILE_SIZE_MB=50
+EMBEDDING_MODEL=Xenova/all-MiniLM-L6-v2
+GEMINI_MODEL=gemini-2.0-flash-exp
+TEMPERATURE=0.7
+MAX_OUTPUT_TOKENS=2048
+ENABLE_OCR=true
+ENABLE_YOUTUBE=true
+```
+
+4. **Start the development server**
+```bash
 npm run dev
 ```
 
-The app (frontend + API) runs at `http://localhost:3000`.
+The app runs at `http://localhost:3000`.
 
-### 2. Start the Frontend (Next.js)
+## 🚀 Usage
 
-From the project root:
+### 1. Upload Documents
 
-```bash
-npm install
-npm run dev
-# Then visit http://localhost:3000
-```
+**Supported File Types:**
+- **Documents**: PDF, TXT, MD, DOCX, PPTX
+- **Images**: PNG, JPG, JPEG (visual analysis)
+- **Videos**: MP4 (frame extraction + visual analysis)
+- **Audio**: MP3, WAV, M4A (transcript extraction)
 
-### 3. Use the Application
+**Upload Process:**
+1. Click "Choose file" and select your file
+2. Wait for processing
+3. Images/Videos are stored and ready for visual analysis
+4. Text documents are chunked and indexed
 
-1. **Upload a Document**: Click "Choose PDF or TXT file" and select your document
-2. **Wait for Processing**: The system will extract text, chunk it, and create embeddings
-3. **Start Chatting**: Once uploaded, ask questions about your document
-4. **Get Answers**: Gemini will respond based only on the document content
+### 2. Upload YouTube Videos
 
-## API Endpoints
+1. Paste a YouTube URL in the input field
+2. Click "Add YouTube"
+3. Transcript is extracted and indexed
+
+### 3. Start Chatting
+
+1. Ask questions about your uploaded content
+2. For images/videos, the AI analyzes visual content
+3. For documents, the AI uses RAG-based retrieval
+4. Get comprehensive, context-aware answers
+
+## 📡 API Endpoints
 
 ### Document Upload
 ```http
-POST /upload
+POST /api/upload
 Content-Type: multipart/form-data
 
-file: <PDF or TXT file>
+file: <PDF/TXT/MD/DOCX/PPTX/PNG/JPG/MP4/MP3/WAV file>
+```
+
+**Response:**
+```json
+{
+  "filename": "example.jpg",
+  "total_chunks": 0,
+  "media_id": "1234567890_abc123",
+  "message": "Image uploaded successfully. Ready for visual analysis!"
+}
 ```
 
 ### Chat
 ```http
-POST /chat
+POST /api/chat
 Content-Type: application/json
 
 {
   "session_id": "uuid",
-  "query": "What is this document about?",
+  "query": "What is in this image?",
   "top_k": 5
+}
+```
+
+**Response:**
+```json
+{
+  "session_id": "uuid",
+  "query": "What is in this image?",
+  "response": "This image shows...",
+  "media_analyzed": 1,
+  "relevant_chunks": [],
+  "chunk_count": 0
 }
 ```
 
 ### Create Session
 ```http
-POST /session/new
+POST /api/session/new
 ```
 
 ### Get Statistics
 ```http
-GET /stats
+GET /api/stats
 ```
 
 ### Clear All Data
 ```http
-DELETE /clear
+DELETE /api/clear
 ```
 
-## Configuration
+### YouTube Upload
+```http
+POST /api/upload/url
+Content-Type: application/json
 
-Edit `config.py` or `.env` file to customize:
+{
+  "url": "https://www.youtube.com/watch?v=..."
+}
+```
 
-```python
+## ⚙️ Configuration
+
+Edit `.env.local` file to customize:
+
+```bash
 # Document Processing
-MAX_CHUNK_SIZE = 1000        # Tokens per chunk
-CHUNK_OVERLAP = 200          # Overlap between chunks
-MAX_FILE_SIZE_MB = 50        # Maximum upload size
+MAX_CHUNK_SIZE=1000        # Tokens per chunk
+CHUNK_OVERLAP=200          # Overlap between chunks
+MAX_FILE_SIZE_MB=50        # Maximum upload size
 
 # Embeddings
-EMBEDDING_MODEL = "all-MiniLM-L6-v2"  # Sentence transformer model
+EMBEDDING_MODEL=Xenova/all-MiniLM-L6-v2  # Sentence transformer model
 
 # Gemini Settings
-GEMINI_MODEL = "gemini-pro"
-TEMPERATURE = 0.7
-MAX_OUTPUT_TOKENS = 2048
+GEMINI_MODEL=gemini-2.0-flash-exp
+TEMPERATURE=0.7
+MAX_OUTPUT_TOKENS=2048
+
+# Features
+ENABLE_OCR=true            # Enable OCR for images (fallback)
+ENABLE_YOUTUBE=true        # Enable YouTube transcript extraction
 ```
 
-## Cost Optimization Strategy
+## 💡 How It Works
+
+### 1. Document Processing
+```
+PDF/DOCX/PPTX/TXT/MD → Text Extraction → Cleaning → Semantic Chunking → ~500-1000 chunks
+```
+
+### 2. Image Processing
+```
+PNG/JPG → Store File → Send to Gemini Vision API → Visual Analysis
+        → (Optional) OCR for text search fallback
+```
+
+### 3. Video Processing
+```
+MP4 → Store File → Extract Key Frames (5 frames) → Send to Gemini Vision API → Visual Analysis
+    → Extract Audio Transcript → Index for text search
+```
+
+### 4. Audio Processing
+```
+MP3/WAV/M4A → Convert to WAV → Whisper ASR → Transcript → Chunking → Indexing
+```
+
+### 5. Query Processing (RAG)
+```
+User Query → Embed Query → Search FAISS → Top-K Chunks
+          → If Media Files Exist → Include in Gemini Vision API
+          → Build Prompt with Context + Media → Gemini → Response
+```
+
+## 🎨 UI Features
+
+- **Bright, vibrant color scheme** with gradients
+- **Responsive design** for all screen sizes
+- **Real-time chat interface** with message history
+- **Upload progress indicators**
+- **File type support indicators**
+- **Status messages** for success/error states
+
+## 💰 Cost Optimization Strategy
 
 This application is designed for minimal cost:
 
 1. **Local Embeddings**: Uses free Sentence Transformers instead of paid embedding APIs
 2. **FAISS Vector Store**: Zero-cost local similarity search
 3. **Smart Chunking**: Only sends relevant chunks to Gemini, not entire documents
-4. **Caching**: Embeddings are cached to avoid recomputation
+4. **Caching**: Embeddings are cached in SQLite database
 5. **Free Tier**: Gemini offers generous free tier (60 requests/minute)
 
 ### Estimated Costs
 
 For a 1000-page PDF (~500,000 words):
 - **Embedding**: FREE (local model)
-- **Storage**: FREE (local FAISS)
+- **Storage**: FREE (local SQLite)
 - **Chat queries**: ~$0.00 with Gemini free tier (up to 60 RPM)
+- **Vision API**: Included in Gemini free tier
 
-## How It Works
+## 🐛 Troubleshooting
 
-### 1. Document Processing
-```
-PDF/TXT → Text Extraction → Cleaning → Semantic Chunking → ~500-1000 chunks
-```
+### Issue: "GEMINI_API_KEY not set"
+- **Solution**: Create `.env.local` file with your API key
 
-### 2. Indexing
-```
-Chunks → Embeddings (Sentence Transformers) → FAISS Index → Fast Search
-```
-
-### 3. Query Processing (RAG)
-```
-User Query → Embed Query → Search FAISS → Top-K Chunks → Build Prompt → Gemini → Response
-```
-
-### 4. Prompt Engineering
-The system uses a structured prompt:
-```
-System: You are a helpful assistant answering ONLY based on provided context...
-
-Context: [Retrieved relevant chunks]
-
-Conversation History: [Last 5 messages]
-
-User Question: [Current query]
-
-Answer:
-```
-
-## Advanced Features
-
-### Custom Chunking Strategies
-
-The `TextChunker` class supports two strategies:
-
-1. **Word-based chunking**: Fixed token size with overlap
-2. **Sentence-based chunking**: Maintains semantic coherence
-
-### Session Management
-
-Each user gets a unique session with:
-- Persistent chat history
-- Context-aware responses
-- Independent document processing
-
-### Vector Search
-
-FAISS provides:
-- Sub-linear search time O(log n)
-- Efficient memory usage
-- Scalable to millions of vectors
-
-## Troubleshooting
+### Issue: "OCR is disabled by settings"
+- **Solution**: Set `ENABLE_OCR=true` in `.env.local` or enable it in settings
 
 ### Issue: "No text could be extracted from PDF"
-- **Solution**: PDF might be scanned. Enable OCR by installing Tesseract
+- **Solution**: PDF might be scanned. Enable OCR in settings
+
+### Issue: "Video frame extraction failed"
+- **Solution**: Ensure `ffmpeg-static` is properly installed. The package should be automatically installed with npm.
+
+### Issue: "Cannot connect to backend API"
+- **Solution**: Ensure the Next.js server is running: `npm run dev`
+
+## 📁 Project Structure
+
+```
+docs-chat-master/
+├── app/
+│   ├── api/              # API routes
+│   │   ├── chat/         # Chat endpoint
+│   │   ├── upload/        # File upload
+│   │   ├── session/      # Session management
+│   │   └── _state.ts     # Shared state
+│   ├── globals.css       # Global styles
+│   ├── layout.tsx        # Root layout
+│   └── page.tsx          # Main page
+├── lib/
+│   ├── documentProcessor.ts  # File processing
+│   ├── gemini.ts            # Gemini API integration
+│   ├── vectorStore.ts        # Vector database
+│   ├── textChunker.ts        # Text chunking
+│   └── settings.ts          # Configuration
+├── data/                     # SQLite database storage
+├── uploads/                  # Uploaded media files
+├── package.json
+├── tsconfig.json
+└── README.md
+```
+
+## 🚀 Deployment
+
+### Build for Production
 ```bash
-# Install Tesseract OCR
-# Windows: Download from https://github.com/UB-Mannheim/tesseract/wiki
-# Mac: brew install tesseract
-# Linux: sudo apt-get install tesseract-ocr
+npm run build
+npm start
 ```
 
-### Issue: "Gemini API quota exceeded"
-- **Solution**:
-  - Wait for quota reset (60 requests/minute)
-  - Upgrade to paid tier
-  - Fallback to local LLM (LLaMA, Falcon)
+### Environment Variables
+Make sure to set all required environment variables in your deployment platform:
+- `GEMINI_API_KEY` (required)
+- Other optional settings (see Configuration section)
 
-### Issue: "Out of memory"
-- **Solution**:
-  - Reduce `MAX_CHUNK_SIZE`
-  - Process documents in batches
-  - Use smaller embedding model
-
-### Issue: "Cannot connect to backend"
-- **Solution**:
-  - Ensure backend is running: `python main.py`
-  - Check port 8000 is available
-  - Verify CORS settings
-
-## Performance Optimization
-
-### For Large Documents (10,000+ pages)
-
-1. **Batch Processing**
-```python
-# Process in chunks of 100 pages
-for batch in document_batches:
-    process_batch(batch)
-```
-
-2. **Hierarchical Chunking**
-```python
-# Create summary chunks + detailed chunks
-summary_chunks = create_summaries(document)
-detail_chunks = create_detailed_chunks(document)
-```
-
-3. **Hybrid Search**
-```python
-# Combine vector search with keyword search
-results = vector_search(query) + keyword_search(query)
-```
-
-## Extending the Application
-
-### Add Support for More File Types
-```python
-# In document_processor.py
-def process_docx(file_path):
-    from docx import Document
-    doc = Document(file_path)
-    return '\n'.join([p.text for p in doc.paragraphs])
-```
-
-### Use Alternative LLMs
-```python
-# Local LLM fallback
-from transformers import pipeline
-
-llm = pipeline("text-generation", model="meta-llama/Llama-2-7b")
-```
-
-### Add Authentication
-```python
-# In main.py
-from fastapi.security import HTTPBearer
-
-security = HTTPBearer()
-
-@app.post("/upload")
-async def upload(file: UploadFile, token: str = Depends(security)):
-    # Validate token
-    ...
-```
-
-## Deployment
-
-### Docker Deployment
-```dockerfile
-FROM python:3.10-slim
-
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-
-COPY . .
-
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
-```
-
-### Cloud Deployment Options
-- **Heroku**: Free tier available
-- **Railway**: Easy deployment
-- **Vercel**: Frontend hosting
-- **Google Cloud Run**: Serverless backend
-
-## License
+## 📝 License
 
 MIT License - feel free to use and modify for your projects.
 
-## Contributing
+## 🤝 Contributing
 
 Contributions welcome! Areas for improvement:
-- OCR support for scanned PDFs
-- Multi-language support
-- Document comparison features
+- Support for more video formats
+- Batch image/video processing
 - Export chat history
 - Advanced analytics
+- Multi-language support
 
-## Support
+## 🙏 Acknowledgments
 
-For issues and questions:
-- Create an issue in the repository
-- Check the troubleshooting section
-- Review API documentation at `/docs`
-
-## Acknowledgments
-
-- Google Gemini for the LLM API
-- Facebook AI for FAISS
+- Google Gemini for the LLM and Vision API
+- Facebook AI for FAISS (now Meta)
+- Xenova for Transformers.js
 - Sentence Transformers project
-- FastAPI framework
+- Next.js framework
 
 ---
 
-Built with efficiency and cost-optimization in mind. Happy chatting with your documents!
+Built with efficiency, cost-optimization, and **true visual understanding** in mind. Happy chatting with your documents, images, and videos! 🎉
