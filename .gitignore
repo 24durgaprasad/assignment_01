@@ -1,6 +1,7 @@
 # Environment variables
 .env
 .env.local
+docs-chat-master\.env.local
 
 # Next.js
 .next
