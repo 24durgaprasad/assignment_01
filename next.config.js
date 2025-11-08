@@ -2,7 +2,7 @@
 const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: [
-      'better-sqlite3',
+      'mongodb',
       'onnxruntime-node',
       'tesseract.js',
       'ffmpeg-static',
@@ -17,7 +17,6 @@ const nextConfig = {
       config.externals = [
         ...externals,
         'onnxruntime-node',
-        'better-sqlite3',
       ];
     }
     config.resolve.fallback = {

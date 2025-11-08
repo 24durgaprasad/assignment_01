@@ -28,82 +28,125 @@ export async function POST(req: Request) {
         mediaToInclude.push({ filePath: media.filePath, mimeType: media.mimeType });
       }
     }
+    
+    console.log(`Chat request - Media files: ${mediaToInclude.length}, MediaFiles map size: ${mediaFiles.size}`);
 
-    // If we have media files, always use them with Gemini Vision
-    if (mediaToInclude.length > 0) {
-      // For videos, extract frames
-      const finalMediaFiles: { filePath: string; mimeType: string }[] = [];
-      for (const media of mediaToInclude) {
-        if (media.mimeType.startsWith('video/')) {
-          try {
-            const frames = await extractVideoFrames(media.filePath, 5);
-            // Convert frames to base64 and add as images
-            for (const framePath of frames) {
-              try {
-                const frameData = await fs.readFile(framePath);
-                const base64Data = frameData.toString('base64');
-                // Create temporary file reference for Gemini
-                finalMediaFiles.push({ 
-                  filePath: framePath, 
-                  mimeType: 'image/jpeg' 
-                });
-              } catch (e) {
-                console.warn("Failed to read video frame:", e);
-              }
+    // Process media files (extract video frames, etc.)
+    const finalMediaFiles: { filePath: string; mimeType: string }[] = [];
+    for (const media of mediaToInclude) {
+      if (media.mimeType.startsWith('video/')) {
+        try {
+          const frames = await extractVideoFrames(media.filePath, 5);
+          for (const framePath of frames) {
+            try {
+              await fs.access(framePath); // Check if file exists
+              finalMediaFiles.push({ 
+                filePath: framePath, 
+                mimeType: 'image/jpeg' 
+              });
+            } catch (e) {
+              console.warn("Failed to access video frame:", e);
             }
-          } catch (e) {
-            console.warn("Failed to extract video frames, using video file directly:", e);
-            finalMediaFiles.push(media);
           }
-        } else {
+        } catch (e) {
+          console.warn("Failed to extract video frames, using video file directly:", e);
           finalMediaFiles.push(media);
         }
-      }
-      
-      // Build prompt with context if available
-      let prompt = query;
-      const stats = store.getStats();
-      if (stats.index_size > 0) {
-        const results = await store.search(query, top_k);
-        if (results.length > 0) {
-          const contexts = results.map((c, i) => `[Context ${i + 1}]:\n${c.chunk.text || ""}\n`).join("\n");
-          const hist = history.slice(-5).map(m => `${m.role === "user" ? "User" : "Assistant"}: ${m.content}`).join("\n");
-          prompt = `${hist ? `CONVERSATION HISTORY:\n${hist}\n\n` : ""}USER QUESTION: ${query}\n\nDOCUMENT CONTEXT:\n${contexts}\n\nANSWER:`;
-        }
       } else {
-        // No text context, but we have media - use simple prompt
-        const hist = history.slice(-5).map(m => `${m.role === "user" ? "User" : "Assistant"}: ${m.content}`).join("\n");
-        prompt = `${hist ? `CONVERSATION HISTORY:\n${hist}\n\n` : ""}USER QUESTION: ${query}\n\nPlease analyze the ${finalMediaFiles.length > 1 ? `${finalMediaFiles.length} images/frames` : "image/frame"} provided and answer based on what you see.\n\nANSWER:`;
+        finalMediaFiles.push(media);
+      }
+    }
+
+    // Get text context from vector store if available
+    const stats = store.getStats();
+    const hasTextContext = stats.index_size > 0;
+    let textResults: { chunk: any; score: number }[] = [];
+    
+    console.log(`Vector store stats - Total chunks: ${stats.total_chunks}, Index size: ${stats.index_size}, Has text context: ${hasTextContext}`);
+    
+    if (hasTextContext) {
+      textResults = await store.search(query, top_k);
+      console.log(`Found ${textResults.length} relevant text chunks for query: "${query}"`);
+      if (textResults.length > 0) {
+        console.log(`Top result score: ${textResults[0].score}, Text preview: ${textResults[0].chunk.text.substring(0, 100)}...`);
+      } else {
+        console.warn(`No search results found, but store has ${stats.total_chunks} chunks. This might indicate a search issue.`);
+        // Even if no search results, if we have chunks, try to use them with lower threshold
+        // For now, we'll proceed with empty results but the user should see a helpful message
+      }
+    }
+
+    // Build prompt combining text context and media
+    let prompt = "";
+    const hist = history.slice(-5).map(m => `${m.role === "user" ? "User" : "Assistant"}: ${m.content}`).join("\n");
+    
+    if (textResults.length > 0 && finalMediaFiles.length > 0) {
+      // Both text and images available - combine them
+      const contexts = textResults.map((c, i) => `[Context ${i + 1}]:\n${c.chunk.text || ""}\n`).join("\n");
+      prompt = `${hist ? `CONVERSATION HISTORY:\n${hist}\n\n` : ""}USER QUESTION: ${query}\n\nDOCUMENT CONTEXT (from uploaded documents):\n${contexts}\n\nIMAGES PROVIDED: ${finalMediaFiles.length} ${finalMediaFiles.length === 1 ? 'image' : 'images'} ${finalMediaFiles.length > 0 ? 'have been provided. Please analyze the images along with the document context to answer the question.' : ''}\n\nPlease answer the question using both the document context and the images provided. If the images contain relevant information, include that in your answer.\n\nANSWER:`;
+    } else if (textResults.length > 0) {
+      // Only text context available
+      prompt = buildRagPrompt(query, textResults.map(r => ({ text: r.chunk.text })), history);
+    } else if (finalMediaFiles.length > 0) {
+      // Only images available
+      prompt = `${hist ? `CONVERSATION HISTORY:\n${hist}\n\n` : ""}USER QUESTION: ${query}\n\nIMAGES PROVIDED: ${finalMediaFiles.length} ${finalMediaFiles.length === 1 ? 'image has' : 'images have'} been provided.\n\nPlease analyze the ${finalMediaFiles.length === 1 ? 'image' : 'images'} carefully and answer the question based on what you see. Describe the content, objects, text, layout, and any relevant details in the ${finalMediaFiles.length === 1 ? 'image' : 'images'}.\n\nANSWER:`;
+    } else {
+      // No context at all - neither text results nor media files
+      console.error(`No context available - hasTextContext: ${hasTextContext}, textResults: ${textResults.length}, mediaFiles: ${finalMediaFiles.length}, stats:`, stats);
+      
+      if (!hasTextContext && finalMediaFiles.length === 0) {
+        return NextResponse.json({ 
+          detail: "No documents or images uploaded. Please upload a document or image first. If you just uploaded a file, please wait a moment for processing to complete and try again." 
+        }, { status: 400 });
       }
       
-      const answer = await generateWithGemini(prompt, finalMediaFiles.length > 0 ? finalMediaFiles : mediaToInclude);
-      history.push({ role: "assistant", content: answer });
+      // We have text context but no search results - provide a helpful response
+      if (hasTextContext && textResults.length === 0) {
+        return NextResponse.json({ 
+        session_id, 
+        query, 
+        response: "I couldn't find information directly matching your question in the uploaded documents. The documents may not contain information about this specific topic, or the question might need to be rephrased. Please try:\n1. Rephrasing your question using different keywords\n2. Asking a more general question about the document content\n3. Uploading additional relevant documents", 
+        relevant_chunks: [], 
+        chunk_count: 0 
+      });
+      }
+      
       return NextResponse.json({ 
         session_id, 
         query, 
-        response: answer, 
+        response: "I couldn't find relevant information in the documents to answer your question. Please try rephrasing your question or upload more relevant documents.", 
         relevant_chunks: [], 
-        chunk_count: 0,
-        media_analyzed: mediaToInclude.length
+        chunk_count: 0 
       });
     }
 
-    // Fallback to text-only RAG if no media files
-    if (store.getStats().index_size === 0) {
-      return NextResponse.json({ detail: "No documents uploaded. Please upload a document first." }, { status: 400 });
-    }
-
-    const results = await store.search(query, top_k);
-    if (!results.length) {
-      return NextResponse.json({ session_id, query, response: "I couldn't find relevant information in the document to answer your question.", relevant_chunks: [], chunk_count: 0 });
-    }
-    const prompt = buildRagPrompt(query, results.map(r => ({ text: r.chunk.text })), history);
-    const answer = await generateWithGemini(prompt);
+    // Generate response with Gemini (including images if available)
+    const answer = await generateWithGemini(
+      prompt, 
+      finalMediaFiles.length > 0 ? finalMediaFiles : undefined
+    );
+    
     history.push({ role: "assistant", content: answer });
-    const chunk_info = results.map(r => ({ id: r.chunk.id, text: r.chunk.text.length > 200 ? r.chunk.text.slice(0, 200) + "..." : r.chunk.text, score: r.score }));
-    return NextResponse.json({ session_id, query, response: answer, relevant_chunks: chunk_info, chunk_count: results.length });
+    
+    const chunk_info = textResults.map(r => ({ 
+      id: r.chunk.id, 
+      text: r.chunk.text.length > 200 ? r.chunk.text.slice(0, 200) + "..." : r.chunk.text, 
+      score: r.score 
+    }));
+    
+    return NextResponse.json({ 
+      session_id, 
+      query, 
+      response: answer, 
+      relevant_chunks: chunk_info, 
+      chunk_count: textResults.length,
+      media_analyzed: finalMediaFiles.length
+    });
   } catch (e: any) {
-    return NextResponse.json({ detail: `Error generating response: ${e.message || e}` }, { status: 500 });
+    console.error("Error in chat route:", e);
+    return NextResponse.json({ 
+      detail: `Error generating response: ${e.message || e}` 
+    }, { status: 500 });
   }
 }
 

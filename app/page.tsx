@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./globals.css";
 
 type RelevantChunk = { id?: number | string; text?: string; score?: number };
@@ -237,7 +237,7 @@ export default function Page() {
         <div className="messages" id="messages" ref={messagesRef}>
           {messages.length === 0 ? (
             <div className="empty-state">
-              <h2>Welcome to GenZ Chat ✨</h2>
+              <h2>Welcome to ASK ATLAS ✨</h2>
               <p>Drop in docs, pics, vids, or a YouTube link. Then ask away.</p>
             </div>
           ) : (

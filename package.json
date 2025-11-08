@@ -16,7 +16,7 @@
     "remove-markdown": "^0.5.0",
     "jszip": "^3.10.1",
     "tesseract.js": "^5.1.0",
-    "better-sqlite3": "^9.6.0",
+    "mongodb": "^6.3.0",
     "ffmpeg-static": "^5.2.0",
     "youtube-transcript": "^1.2.0",
     "react": "18.3.1",

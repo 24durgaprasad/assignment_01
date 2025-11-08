@@ -9,7 +9,7 @@ A powerful, cost-efficient application that allows users to upload documents, im
 - **🎥 Video Analysis**: Automatic frame extraction and visual analysis with Gemini Vision
 - **🎤 Audio Processing**: Extract transcripts from MP3, MP4, WAV, M4A files using Whisper
 - **🔍 Intelligent Text Chunking**: Semantic chunking with overlap for better context
-- **📊 Vector Embeddings**: Fast similarity search using FAISS and Sentence Transformers
+- **📊 Vector Embeddings**: Fast similarity search using MongoDB storage and Sentence Transformers
 - **💬 RAG-based Chat**: Context-aware responses using Google Gemini API
 - **🎯 Session Management**: Maintain conversation context across queries
 - **🎨 Modern UI**: Bright, vibrant, responsive chat interface
@@ -46,7 +46,7 @@ A powerful, cost-efficient application that allows users to upload documents, im
        │
        ├─→ Text Chunker (Semantic chunking)
        │
-       ├─→ Vector Store (FAISS + Sentence Transformers)
+       ├─→ Vector Store (MongoDB + Sentence Transformers)
        │
        └─→ Gemini Handler (Text + Vision API)
 ```
@@ -62,7 +62,7 @@ A powerful, cost-efficient application that allows users to upload documents, im
 - **@xenova/transformers**: Whisper for audio transcription
 - **ffmpeg-static**: Video frame extraction
 - **Sentence Transformers**: Free local embeddings (Xenova/all-MiniLM-L6-v2)
-- **better-sqlite3**: Vector database storage
+- **mongodb**: Vector database storage
 - **Google Gemini API**: LLM for text and vision analysis
 - **youtube-transcript**: YouTube video transcript extraction
 
@@ -94,6 +94,8 @@ npm install
 Create a `.env.local` file in the root directory:
 ```bash
 GEMINI_API_KEY=your_actual_api_key_here
+MONGODB_URI=mongodb://localhost:27017
+MONGODB_DB_NAME=docs-chat
 MAX_CHUNK_SIZE=1000
 CHUNK_OVERLAP=200
 MAX_FILE_SIZE_MB=50
@@ -104,6 +106,11 @@ MAX_OUTPUT_TOKENS=2048
 ENABLE_OCR=true
 ENABLE_YOUTUBE=true
 ```
+
+**Note:** MongoDB is required for persistent storage. If MongoDB is not available, the app will fall back to in-memory storage (data will be lost on restart). To use MongoDB:
+- Install MongoDB locally or use MongoDB Atlas (cloud)
+- Set `MONGODB_URI` to your MongoDB connection string (e.g., `mongodb://localhost:27017` for local, or `mongodb+srv://user:pass@cluster.mongodb.net/` for Atlas)
+- The app will automatically create the database and collections on first use
 
 4. **Start the development server**
 ```bash
@@ -215,6 +222,10 @@ Content-Type: application/json
 Edit `.env.local` file to customize:
 
 ```bash
+# MongoDB (Required for persistent storage)
+MONGODB_URI=mongodb://localhost:27017  # MongoDB connection string
+MONGODB_DB_NAME=docs-chat              # Database name
+
 # Document Processing
 MAX_CHUNK_SIZE=1000        # Tokens per chunk
 CHUNK_OVERLAP=200          # Overlap between chunks
@@ -278,16 +289,16 @@ User Query → Embed Query → Search FAISS → Top-K Chunks
 This application is designed for minimal cost:
 
 1. **Local Embeddings**: Uses free Sentence Transformers instead of paid embedding APIs
-2. **FAISS Vector Store**: Zero-cost local similarity search
+2. **MongoDB Vector Store**: Persistent storage with in-memory similarity search
 3. **Smart Chunking**: Only sends relevant chunks to Gemini, not entire documents
-4. **Caching**: Embeddings are cached in SQLite database
+4. **Caching**: Embeddings are cached in MongoDB database
 5. **Free Tier**: Gemini offers generous free tier (60 requests/minute)
 
 ### Estimated Costs
 
 For a 1000-page PDF (~500,000 words):
 - **Embedding**: FREE (local model)
-- **Storage**: FREE (local SQLite)
+- **Storage**: FREE (local MongoDB) or MongoDB Atlas free tier
 - **Chat queries**: ~$0.00 with Gemini free tier (up to 60 RPM)
 - **Vision API**: Included in Gemini free tier
 
@@ -308,6 +319,19 @@ For a 1000-page PDF (~500,000 words):
 ### Issue: "Cannot connect to backend API"
 - **Solution**: Ensure the Next.js server is running: `npm run dev`
 
+### Issue: "MongoDB connection error"
+- **Solution**: 
+  - Ensure MongoDB is running locally, or
+  - Update `MONGODB_URI` in `.env.local` to point to your MongoDB instance
+  - The app will work in in-memory mode if MongoDB is not available, but data won't persist
+
+### Issue: "AI says it can't find information in PDF/JPEG"
+- **Solution**: 
+  - For PDFs: Ensure the PDF contains extractable text (not just images). Scanned PDFs may need OCR.
+  - For JPEGs: Images are analyzed using Gemini Vision API. Ensure images are properly uploaded and the Gemini API key is valid.
+  - Check the console logs for extraction errors
+  - Try rephrasing your question or uploading the document again
+
 ## 📁 Project Structure
 
 ```
@@ -327,7 +351,6 @@ docs-chat-master/
 │   ├── vectorStore.ts        # Vector database
 │   ├── textChunker.ts        # Text chunking
 │   └── settings.ts          # Configuration
-├── data/                     # SQLite database storage
 ├── uploads/                  # Uploaded media files
 ├── package.json
 ├── tsconfig.json
